@@ -56,3 +56,72 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 }
+
+
+export const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        res.clearCookie("access_token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }).status(200).json({
+            success: true,
+            message: "user logged out successfully",
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+export const getCurrentUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user;
+        const userData = await User.findById(user?.id).select("-password");
+        if (!userData) {
+            next(new ApiError(404, "User not found"));
+        }
+        return res.status(200).json({
+            success: true,
+            message: "user fetched successfully",
+            data: userData,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId).select("-password");
+        if (!user) {
+            next(new ApiError(404, "User not found"));
+        }
+        return res.status(200).json({
+            success: true,
+            message: "user fetched successfully",
+            data: user,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const skip = (page - 1) * limit;
+        const [users, total] = await Promise.all([
+            User.find().select("-password").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(), User.countDocuments()]);
+        return res.status(200).json({
+            success: true,
+            message: "users fetched successfully",
+            data: users,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
