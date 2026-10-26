@@ -9,7 +9,7 @@ export const registerUser = async (req: Request<{}, {}, RegisterInput>, res: Res
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            next(new ApiError(400, "User already exists"));
+            return next(new ApiError(400, "User already exists"));
         }
 
         const user = await User.create({ name, email, password });
@@ -34,11 +34,11 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
         const user = await User.findOne({ email });
 
         if (!user) {
-            next(new ApiError(400, "Invalid email or password"));
+            return next(new ApiError(400, "Invalid email or password"));
         }
         const isPasswordValid = await user?.comparePassword(password);
         if (!isPasswordValid) {
-            next(new ApiError(400, "Invalid email or password"));
+            return next(new ApiError(400, "Invalid email or password"));
         }
 
         const token = await user?.generateAccessToken();
@@ -80,7 +80,7 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
         const user = req.user;
         const userData = await User.findById(user?.id).select("-password");
         if (!userData) {
-            next(new ApiError(404, "User not found"));
+            return next(new ApiError(404, "User not found"));
         }
         return res.status(200).json({
             success: true,
@@ -97,7 +97,7 @@ export const getUser = async (req: Request, res: Response, next: NextFunction) =
         const userId = req.params.id;
         const user = await User.findById(userId).select("-password");
         if (!user) {
-            next(new ApiError(404, "User not found"));
+            return next(new ApiError(404, "User not found"));
         }
         return res.status(200).json({
             success: true,
